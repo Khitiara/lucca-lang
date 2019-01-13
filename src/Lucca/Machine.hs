@@ -32,8 +32,11 @@ fetch = use (machine . pcReg) >>= (\pc -> liftMaybe' NoInstruction $ use $ progr
 incPc :: (Monad m) => MachineT m ()
 incPc = (machine . pcReg) += 1
 
+push' :: (Monad m) => StackEntry -> MachineT m ()
+push' e = (machine . stack) %= (e:)
+
 push :: (Monad m) => DataType -> MachineT m ()
-push d = (machine . stack) %= ((Data d):)
+push = push' . Data
 
 pop :: (Monad m) => MachineT m DataType
 pop = use (machine . stack) >>= processStack
@@ -60,53 +63,3 @@ doCompare (F a) (N b) = Just $ compare a (fromIntegral b)
 doCompare (F a) (F b) = Just $ compare a b
 doCompare (S a) (S b) = Just $ compare a b
 doCompare (O a) (O b) = Just $ compare a b
-
-
-handleInstruction :: (Monad m) => Instruction -> MachineT m ()
-handleInstruction (Load reg) = load reg
-handleInstruction (Store reg) = store reg
-handleInstruction (Push d) = push d
-handleInstruction Pop = void pop
-handleInstruction Dup = do
-    a <- pop
-    push a
-    push a
-handleInstruction Swap = do
-    a <- pop
-    b <- pop
-    push a
-    push b
-    
-handleInstruction Addi = arithmeticInstruction addi
-handleInstruction Subi = arithmeticInstruction subi
-handleInstruction Muli = arithmeticInstruction muli
-handleInstruction Divi = do
-    a <- pop
-    b <- pop
-    (q, r) <- liftMaybe ArithmeticError $ divi a b
-    push r
-    push q
-handleInstruction Addf = arithmeticInstruction addf
-handleInstruction Subf = arithmeticInstruction subf
-handleInstruction Mulf = arithmeticInstruction mulf
-handleInstruction Divf = arithmeticInstruction divf
-
-handleInstruction Lshi = do
-    a <- pop
-    o <- liftMaybe ArithmeticError $ case a of
-        N a' -> Just $ N $ shiftL a' 1
-        _ -> Nothing
-    push o
-handleInstruction Rshi = do
-    a <- pop
-    o <- liftMaybe ArithmeticError $ case a of
-        N a' -> Just $ N $ shiftR a' 1
-        _ -> Nothing
-    push o
-
-handleInstruction Cmp = do
-    a <- pop
-    b <- pop
-    c <- liftMaybe ArithmeticError $ doCompare a b
-    machine . cmpReg ?= c
-    
