@@ -16,7 +16,7 @@ data Instruction = Nop
                  | Ret  -- Return the top of the stack to last stack frame
                  | Blt Int  -- Branch if less than (no stack frame)
                  | Call Int -- Call (adds stack frame)
-                 | SysInt -- System call
+                 | SysInt String -- System call
                  -- Integer arithmetic
                  | Addi -- Add int
                  | Muli -- Mul int
@@ -31,3 +31,4 @@ data Instruction = Nop
                  | Lshi -- Left shift
                  | Rshi -- Right shift
                  | Cmp  -- Compare
+                 deriving Show

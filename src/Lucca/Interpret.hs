@@ -9,20 +9,26 @@ import Control.Lens
 import Lucca.Utils
 import Data.Bits
 import Data.Functor
-import qualified Data.Map as Map
 import Lucca.SysCalls
+import Lucca.IO.Class
 import Control.Monad (join, forever)
 import Control.Monad.Writer (MonadWriter)
 
-runProgram :: (Monad m, MonadWriter String m) => MachineT m ()
+runProgram :: (Monad m, MonadInteract m) => MachineT m ()
 runProgram = (forever interpret) `catchError` \case
     ReturnFromMain -> return ()
     e -> throwError e
 
-interpret :: (Monad m, MonadWriter String m) => MachineT m ()
-interpret = fetch >>= handleInstruction >> incPc
+interpret :: (Monad m, MonadInteract m) => MachineT m ()
+interpret = do 
+    ins <- fetch
+    logL $ show ins
+    handleInstruction ins 
+    incPc 
+    st <- use (machine . stack) 
+    logL $ show st
 
-handleInstruction :: (Monad m, MonadWriter String m) => Instruction -> MachineT m ()
+handleInstruction :: (Monad m, MonadInteract m) => Instruction -> MachineT m ()
 handleInstruction (Load reg) = load reg
 handleInstruction (Store reg) = store reg
 handleInstruction (Push d) = push d
@@ -73,6 +79,5 @@ handleInstruction Cmp = do
 handleInstruction Ret = doReturn
 handleInstruction (Blt a) = blt a
 handleInstruction (Call a) = doCall a
-handleInstruction SysInt = do
-    fn <- liftMaybe' (OtherError "Not a string!") ((^?_S) <$> pop)
-    join $ liftMaybe NoInstruction $ syscalls ^. at fn
+handleInstruction (SysInt fn) = do
+    join $ liftMaybe (UnknownSI fn) $ syscalls ^. at fn

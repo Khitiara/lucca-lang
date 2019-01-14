@@ -14,16 +14,16 @@ import Control.Monad
 data DataType = N Int | F Double | S String | O Ordering deriving Show
 makePrisms ''DataType
 
-data StackEntry = Data DataType | Frame { _retAdd :: Int }
+data StackEntry = Data DataType | Frame { _retAdd :: Int } deriving Show
 
-data SpecialRegisters = SR { _pc :: Int, _cmp :: Maybe Ordering, _ret :: Maybe DataType }
+data SpecialRegisters = SR { _pc :: Int, _cmp :: Maybe Ordering, _ret :: Maybe DataType } deriving Show
 makeLenses ''SpecialRegisters
 
 data MachineState = MachineState { _stack :: [StackEntry], _genRegs :: Vector (Maybe DataType)
-                                 , _spRegs :: SpecialRegisters }
+                                 , _spRegs :: SpecialRegisters } deriving Show
 makeLenses ''MachineState
 
-data Register = GEN Int | PC | CMP | RET
+data Register = GEN Int | PC | CMP | RET deriving Show
 
 pcReg :: Lens' MachineState Int -- Program counter register
 pcReg = spRegs . pc
@@ -39,3 +39,4 @@ register :: Register -> Getter MachineState (Maybe DataType)
 register (GEN i) = genReg i
 register PC = pcReg . to N . to Just
 register CMP = cmpReg . to (fmap O)
+register RET = retReg

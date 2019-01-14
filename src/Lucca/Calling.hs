@@ -16,10 +16,14 @@ popToFrame = use (machine . stack) >>= processStack
 
 doReturn :: (Monad m) => MachineT m ()
 doReturn = do
-    rVal <- pop
-    machine . retReg ?= rVal
-    addr <- popToFrame
-    machine . pcReg .= addr - 1
+    st <- use (machine . stack)
+    if null st then
+        throwError ReturnFromMain
+    else do
+        rVal <- pop
+        machine . retReg ?= rVal
+        addr <- popToFrame
+        machine . pcReg .= addr - 1
 
 blt :: (Monad m) => Int -> MachineT m ()
 blt addr = do

@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, RankNTypes, FlexibleContexts, ExistentialQuantification #-}
+{-# LANGUAGE TemplateHaskell, RankNTypes, FlexibleContexts, ExistentialQuantification, GeneralizedNewtypeDeriving #-}
 
 module Lucca.Machine 
 ( module Lucca.Machine
@@ -22,13 +22,18 @@ makeLenses ''Program
 data RunningState = RunningState { _machine :: MachineState, _program :: Program }
 makeLenses ''RunningState
 
-data MachineError = ArithmeticError | NoInstruction | OutOfBounds | EmptyRegister 
-                  | IllegalAccess | OtherError String | ReturnFromMain
-type MachineT m = StateT RunningState (ExceptT MachineError m)
+data MachineError = ArithmeticError | NoInstruction Int | OutOfStack | EmptyRegister 
+                  | IllegalAccess | OtherError String | ReturnFromMain | UnknownSI String deriving Show
+newtype MachineT m a = MachineT { runMachineT :: StateT RunningState (ExceptT MachineError m) a }
+    deriving (Functor, Applicative, Monad, MonadState RunningState, MonadError MachineError)
+   
+instance MonadTrans MachineT where
+    lift = MachineT . lift . lift
+   
 type Machine = MachineT Identity
 
 fetch :: (Monad m) => MachineT m Instruction
-fetch = use (machine . pcReg) >>= (\pc -> liftMaybe' NoInstruction $ use $ program . instr . idx pc)
+fetch = use (machine . pcReg) >>= (\pc -> liftMaybe' (NoInstruction pc) $ use $ program . instr . idx pc)
 
 incPc :: (Monad m) => MachineT m ()
 incPc = (machine . pcReg) += 1
@@ -42,7 +47,7 @@ push = push' . Data
 pop :: (Monad m) => MachineT m DataType
 pop = use (machine . stack) >>= processStack
     where processStack ((Data d):xs) = machine . stack .= xs >> return d
-          processStack _ = throwError OutOfBounds
+          processStack _ = throwError OutOfStack
           
 load :: (Monad m) => Register -> MachineT m ()
 load r = liftMaybe' EmptyRegister (use $ machine . register r) >>= push
