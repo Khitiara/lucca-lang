@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts, LambdaCase #-}
+
 module Lucca.Interpret where
 
 import Lucca.Machine
@@ -7,8 +9,20 @@ import Control.Lens
 import Lucca.Utils
 import Data.Bits
 import Data.Functor
+import qualified Data.Map as Map
+import Lucca.SysCalls
+import Control.Monad (join, forever)
+import Control.Monad.Writer (MonadWriter)
 
-handleInstruction :: (Monad m) => Instruction -> MachineT m ()
+runProgram :: (Monad m, MonadWriter String m) => MachineT m ()
+runProgram = (forever interpret) `catchError` \case
+    ReturnFromMain -> return ()
+    e -> throwError e
+
+interpret :: (Monad m, MonadWriter String m) => MachineT m ()
+interpret = fetch >>= handleInstruction >> incPc
+
+handleInstruction :: (Monad m, MonadWriter String m) => Instruction -> MachineT m ()
 handleInstruction (Load reg) = load reg
 handleInstruction (Store reg) = store reg
 handleInstruction (Push d) = push d
@@ -59,3 +73,6 @@ handleInstruction Cmp = do
 handleInstruction Ret = doReturn
 handleInstruction (Blt a) = blt a
 handleInstruction (Call a) = doCall a
+handleInstruction SysInt = do
+    fn <- liftMaybe' (OtherError "Not a string!") ((^?_S) <$> pop)
+    join $ liftMaybe NoInstruction $ syscalls ^. at fn

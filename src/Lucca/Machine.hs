@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell, RankNTypes, FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell, RankNTypes, FlexibleContexts, ExistentialQuantification #-}
 
 module Lucca.Machine 
 ( module Lucca.Machine
@@ -17,17 +17,18 @@ import Data.Vector
 import Lucca.Arithmetic
 import Data.Bits
 
-newtype Program = Program { instr :: Vector Instruction }
-makePrisms ''Program
+data Program = Program { _instr :: Vector Instruction }
+makeLenses ''Program
 data RunningState = RunningState { _machine :: MachineState, _program :: Program }
 makeLenses ''RunningState
 
-data MachineError = ArithmeticError | NoInstruction | OutOfBounds | EmptyRegister | IllegalAccess | OtherError String
+data MachineError = ArithmeticError | NoInstruction | OutOfBounds | EmptyRegister 
+                  | IllegalAccess | OtherError String | ReturnFromMain
 type MachineT m = StateT RunningState (ExceptT MachineError m)
 type Machine = MachineT Identity
 
 fetch :: (Monad m) => MachineT m Instruction
-fetch = use (machine . pcReg) >>= (\pc -> liftMaybe' NoInstruction $ use $ program . _Program . idx pc)
+fetch = use (machine . pcReg) >>= (\pc -> liftMaybe' NoInstruction $ use $ program . instr . idx pc)
 
 incPc :: (Monad m) => MachineT m ()
 incPc = (machine . pcReg) += 1
