@@ -9,6 +9,7 @@ data Instruction = Nop
                  | Load Register -- Load given register to head
                  | Store Register -- Store the head in given register
                  | Push DataType -- Push a literal
+                 | Move Register Register
                  | Pop  -- Pop value
                  | Dup  -- Duplicate the head for convenience
                  | Swap -- Swaps the top two elements of the stack

@@ -31,6 +31,7 @@ interpret = do
 handleInstruction :: (Monad m, MonadInteract m) => Instruction -> MachineT m ()
 handleInstruction (Load reg) = load reg
 handleInstruction (Store reg) = store reg
+handleInstruction (Move r1 r2) = load r1 >> store r2
 handleInstruction (Push d) = push d
 handleInstruction Pop = void pop
 handleInstruction Dup = do

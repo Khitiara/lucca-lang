@@ -13,7 +13,7 @@ class MonadInteract m where
     logL :: String -> m ()
 
 instance MonadInteract IO where
-    printL = putStrLn
+    printL = putStr
     gets = getLine
     logL s = return ()
 
