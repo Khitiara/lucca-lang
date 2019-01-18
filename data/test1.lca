@@ -1,0 +1,16 @@
+push.i 5
+push.i 3
+add.i
+sysi tostr
+push.s \n
+load ret
+sysi strcat
+load ret
+sysi print
+push.s World!\n
+push.s Hello, 
+sysi strcat
+load ret
+sysi print
+push.i 0
+ret

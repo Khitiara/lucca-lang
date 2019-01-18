@@ -28,10 +28,12 @@ doReturn = do
 blt :: (Monad m) => Int -> MachineT m ()
 blt addr = do
     cval <- use $ machine . cmpReg
-    when (cval == Just LT) $ machine . pcReg .= addr - 1
+    when (cval == Just (-1)) $ machine . pcReg .= addr - 1
 
-doCall :: (Monad m) => Int -> MachineT m ()
-doCall addr = do
+doCall :: (Monad m) => Int -> Int -> MachineT m ()
+doCall addr arity = do
     inst <- use $ machine . pcReg
+    args <- replicateM arity pop
     push' $ Frame $ inst + 1
-    machine . pcReg .= addr - 1
+    sequence $ push <$> args
+    machine . pcReg .= addr + 1

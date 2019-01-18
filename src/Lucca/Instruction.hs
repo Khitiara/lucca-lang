@@ -16,7 +16,7 @@ data Instruction = Nop
                  -- Call semantics
                  | Ret  -- Return the top of the stack to last stack frame
                  | Blt Int  -- Branch if less than (no stack frame)
-                 | Call Int -- Call (adds stack frame)
+                 | Call Int Int -- Call (adds stack frame)
                  | SysInt String -- System call
                  -- Integer arithmetic
                  | Addi -- Add int

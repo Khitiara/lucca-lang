@@ -15,7 +15,7 @@ class MonadInteract m where
 instance MonadInteract IO where
     printL = putStr
     gets = getLine
-    logL s = return ()
+    logL s = hPutStr stderr "[DEBUG " >> putStr s >> putStrLn "]"
 
 instance (MonadTrans m1, MonadInteract m2, Monad m2) => MonadInteract (m1 m2) where
     printL = lift . printL

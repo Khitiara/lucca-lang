@@ -22,11 +22,10 @@ runProgram = (forever interpret) `catchError` \case
 interpret :: (Monad m, MonadInteract m) => MachineT m ()
 interpret = do 
     ins <- fetch
-    logL $ show ins
     handleInstruction ins 
     incPc 
-    st <- use (machine . stack) 
-    logL $ show st
+    st <- use machine
+    logL $ show ins ++ ", " ++ show st
 
 handleInstruction :: (Monad m, MonadInteract m) => Instruction -> MachineT m ()
 handleInstruction (Load reg) = load reg
@@ -75,10 +74,10 @@ handleInstruction Cmp = do
     a <- pop
     b <- pop
     c <- liftMaybe ArithmeticError $ doCompare a b
-    machine . cmpReg ?= c
+    machine . cmpReg ?= otoi c
     
 handleInstruction Ret = doReturn
 handleInstruction (Blt a) = blt a
-handleInstruction (Call a) = doCall a
+handleInstruction (Call ad ar) = doCall ad ar
 handleInstruction (SysInt fn) = do
     join $ liftMaybe (UnknownSI fn) $ syscalls ^. at fn

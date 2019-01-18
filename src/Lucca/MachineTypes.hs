@@ -11,12 +11,12 @@ import Lucca.Utils
 import Control.Lens
 import Control.Monad
 
-data DataType = N Int | F Double | S String | O Ordering deriving Show
+data DataType = N Int | F Double | S String deriving Show
 makePrisms ''DataType
 
 data StackEntry = Data DataType | Frame { _retAdd :: Int } deriving Show
 
-data SpecialRegisters = SR { _pc :: Int, _cmp :: Maybe Ordering, _ret :: Maybe DataType } deriving Show
+data SpecialRegisters = SR { _pc :: Int, _cmp :: Maybe Int, _ret :: Maybe DataType } deriving Show
 makeLenses ''SpecialRegisters
 
 data MachineState = MachineState { _stack :: [StackEntry], _genRegs :: Vector (Maybe DataType)
@@ -27,7 +27,7 @@ data Register = GEN Int | PC | CMP | RET deriving Show
 
 pcReg :: Lens' MachineState Int -- Program counter register
 pcReg = spRegs . pc
-cmpReg :: Lens' MachineState (Maybe Ordering) -- Comparison result register
+cmpReg :: Lens' MachineState (Maybe Int) -- Comparison result register
 cmpReg = spRegs . cmp
 retReg :: Lens' MachineState (Maybe DataType) -- Return register
 retReg = spRegs . ret
@@ -38,5 +38,5 @@ genReg i = genRegs . idx' i
 register :: Register -> Getter MachineState (Maybe DataType)
 register (GEN i) = genReg i
 register PC = pcReg . to N . to Just
-register CMP = cmpReg . to (fmap O)
+register CMP = cmpReg . to (fmap N)
 register RET = retReg

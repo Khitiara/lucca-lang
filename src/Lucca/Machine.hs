@@ -62,10 +62,16 @@ arithmeticInstruction f = do
     b <- pop
     out <- liftMaybe ArithmeticError $ f a b
     push out
+    
+otoi :: Ordering -> Int
+otoi LT = -1
+otoi EQ = 0
+otoi GT = 1
+    
 doCompare :: DataType -> DataType -> Maybe Ordering
 doCompare (N a) (N b) = Just $ compare a b
 doCompare (N a) (F b) = Just $ compare (fromIntegral a) b
 doCompare (F a) (N b) = Just $ compare a (fromIntegral b)
 doCompare (F a) (F b) = Just $ compare a b
 doCompare (S a) (S b) = Just $ compare a b
-doCompare (O a) (O b) = Just $ compare a b
+doCompare _ _ = Nothing
